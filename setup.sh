@@ -15,7 +15,6 @@ check_running() {
     is_running "etcd" && \
     is_running "kube-apiserver" && \
     is_running "kube-controller-manager" && \
-    is_running "cloud-controller-manager" && \
     is_running "kube-scheduler" && \
     is_running "kubelet" && \
     is_running "containerd"
@@ -82,10 +81,8 @@ download_components() {
         echo "Downloading additional components..."
         sudo curl -L "https://dl.k8s.io/v1.30.0/bin/linux/amd64/kube-controller-manager" -o kubebuilder/bin/kube-controller-manager
         sudo curl -L "https://dl.k8s.io/v1.30.0/bin/linux/amd64/kube-scheduler" -o kubebuilder/bin/kube-scheduler
-        sudo curl -L "https://dl.k8s.io/v1.30.0/bin/linux/amd64/cloud-controller-manager" -o kubebuilder/bin/cloud-controller-manager
         sudo chmod 755 kubebuilder/bin/kube-controller-manager
         sudo chmod 755 kubebuilder/bin/kube-scheduler
-        sudo chmod 755 kubebuilder/bin/cloud-controller-manager
     fi
 }
 
@@ -263,7 +260,6 @@ start() {
             --storage-backend=etcd3 \
             --storage-media-type=application/json \
             --v=0 \
-            --cloud-provider=external \
             --service-account-issuer=https://kubernetes.default.svc.cluster.local \
             --service-account-key-file=/tmp/sa.pub \
             --service-account-signing-key-file=/tmp/sa.key &
@@ -306,7 +302,7 @@ start() {
             --hostname-override=$(hostname) \
             --pod-infra-container-image=registry.k8s.io/pause:3.10 \
             --node-ip=$HOST_IP \
-            --cloud-provider=external \
+            --cloud-provider="" \
             --cgroup-driver=cgroupfs \
             --max-pods=4  \
             --v=1 &
@@ -321,7 +317,7 @@ start() {
         sudo PATH=$PATH:/opt/cni/bin:/usr/sbin kubebuilder/bin/kube-controller-manager \
             --kubeconfig=/var/lib/kubelet/kubeconfig \
             --leader-elect=false \
-            --cloud-provider=external \
+            --cloud-provider="" \
             --service-cluster-ip-range=10.0.0.0/24 \
             --cluster-name=kubernetes \
             --root-ca-file=/var/lib/kubelet/ca.crt \
@@ -342,7 +338,6 @@ start() {
 
 stop() {
     echo "Stopping Kubernetes components..."
-    stop_process "cloud-controller-manager"
     stop_process "gce_metadata_server"
     stop_process "kube-controller-manager"
     stop_process "kubelet"
